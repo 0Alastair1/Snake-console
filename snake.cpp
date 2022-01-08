@@ -99,7 +99,7 @@ void startgame() {
 
     resetgame();
     SetConsoleCursorPosition(outputhandle, cursorreset);
-    std::wcout << "Press any key to start the game\n";
+    std::wcout << "Press wasd keys to start the game\n";
     std::wcout << "\nPrevious score: " << previousscore;
     while (true)
     {
