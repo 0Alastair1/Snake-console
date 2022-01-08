@@ -1,3 +1,3 @@
 # Snake-console
-A snake console game made in c++ using no external graphics libaries.
-C++ project for practising C++. Uses custom double buffering.
+A snake console game made in c++ from scratch using no external graphics libaries.
+Uses custom double buffering technique and aims for high performance.
