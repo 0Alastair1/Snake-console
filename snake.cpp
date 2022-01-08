@@ -134,10 +134,18 @@ void gameloop() {
         //game input - w = 1 = up, a = 2 = left, s = 3 = down, d = 4 = right
         int lastmove = 0;
 
-        if (GetAsyncKeyState(87) && lastmovekey != 3) lastmovekey = 1;
-        else if (GetAsyncKeyState(65) && lastmovekey != 4) lastmovekey = 2;
-        else if (GetAsyncKeyState(83) && lastmovekey != 1) lastmovekey = 3;
-        else if (GetAsyncKeyState(68) && lastmovekey != 2) lastmovekey = 4;
+        if (squares.size() > 1) {
+            if (GetAsyncKeyState(87) && lastmovekey != 3) lastmovekey = 1;
+            else if (GetAsyncKeyState(65) && lastmovekey != 4) lastmovekey = 2;
+            else if (GetAsyncKeyState(83) && lastmovekey != 1) lastmovekey = 3;
+            else if (GetAsyncKeyState(68) && lastmovekey != 2) lastmovekey = 4;
+        }
+        else {
+            if (GetAsyncKeyState(87)) lastmovekey = 1;
+            else if (GetAsyncKeyState(65)) lastmovekey = 2;
+            else if (GetAsyncKeyState(83)) lastmovekey = 3;
+            else if (GetAsyncKeyState(68)) lastmovekey = 4;
+        }
 
         //alow lastmove to change in the update snake loop but always set it back to lastmovekey when loop reran
         lastmove = lastmovekey;
@@ -151,7 +159,7 @@ void gameloop() {
             switch (lastmove)
             {
             case 1://up
-                if (&squares[i] == &squares[0])
+                if (squares[i] == squares[0])
                 {
 
                     squares[0]->y -= 1;
@@ -178,7 +186,7 @@ void gameloop() {
 
                 break;
             case 2://left ->
-                if (&squares[i] == &squares[0])
+                if (squares[i] == squares[0])
                 {
 
                     squares[0]->x -= 1;
@@ -205,7 +213,7 @@ void gameloop() {
 
                 break;
             case 3://down
-                if (&squares[i] == &squares[0])
+                if (squares[i] == squares[0])
                 {
 
                     squares[0]->y += 1;
@@ -232,7 +240,7 @@ void gameloop() {
 
                 break;
             case 4://right
-                if (&squares[i] == &squares[0])
+                if (squares[i] == squares[0])
                 {
 
                     squares[0]->x += 1;
@@ -293,22 +301,38 @@ void gameloop() {
             squares.push_back(firstsquare);
 
             //generate new food
-            foods[0]->x = (rand() % 32);
-            foods[0]->y = (rand() % 15);
+            bool freespace = true;
+            do {
+                freespace = true;
+                foods[0]->x = (rand() % 32);
+                foods[0]->y = (rand() % 15);
+                for (auto* i : squares)
+                {
+                    if (foods[0]->x == i->x && foods[0]->y == i->y)
+                        freespace = false;
+                }
+            } while (!freespace);
 
 
         }
 
-        //snake die
+
+
+        //snake hits wall
         if (squares[0]->x > 32 || squares[0]->y <= -1 || squares[0]->x <= -1 || squares[0]->y > 15)
         {
             startgame();
         }
 
 
-        //add objects to scene array
+        
         for (auto* i : squares)
         {
+            //snake hits body
+            if (squares[0] != i && squares[0]->y == i->y && squares[0]->x == i->x)
+                startgame();
+
+            //add objects to scene array
             //set snake
             if (i == squares[0])
                 scene[i->y][i->x] = (int)2;
@@ -323,7 +347,7 @@ void gameloop() {
 
         render();
 
-
+#if (DEBUG)
         int difference = ((int)std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - gametimer).count());
         char a[20];
         sprintf(a, "%d", difference);
@@ -331,8 +355,9 @@ void gameloop() {
         LPTSTR lstring = new TCHAR[ae.size() + 1];
         strcpy(lstring, ae.c_str());
         OutputDebugString(lstring);
-
+#endif
         while ((int)std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - gametimer).count() <= 166000000) {}
+        
     }
 }
 
@@ -341,8 +366,6 @@ void render()
 
     static COORD cursorcoord = { (SHORT)0, (SHORT)0 };
     
-    //std::cout << (char)176u; WALL 
-    //std::cout << (char)219u; SNAKE
 
     for (size_t ii = 0; ii < 16; ii++)
     {
@@ -380,8 +403,6 @@ void render()
             }
         }
     }
-    
-    
 }
 
 void resetgame() {
@@ -402,8 +423,6 @@ void resetgame() {
             scenedoublebuffer[ii][i] = (int)0;
         }
     }
-
-
 
     for (auto* i : squares)
     {
