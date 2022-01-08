@@ -24,6 +24,7 @@ static HWND consolehandle = GetConsoleWindow();
 
 static COORD cursorreset = { (SHORT)0, (SHORT)0 };
 
+static int previousscore = 0;
 static int score = 0;
 
 struct objects {
@@ -99,7 +100,7 @@ void startgame() {
     resetgame();
     SetConsoleCursorPosition(outputhandle, cursorreset);
     std::wcout << "Press any key to start the game\n";
-    std::wcout << "\nPrevious score: " << score;
+    std::wcout << "\nPrevious score: " << previousscore;
     while (true)
     {
         for (int i = 8; i <= 256; i++)
@@ -116,37 +117,39 @@ void startgame() {
 }
 
 void gameloop() {
-    gametimer = std::chrono::high_resolution_clock::now();
-
-    //reset the scene array
-    static COORD cursorcoord = { (SHORT)0, (SHORT)0 };
-    for (size_t ii = 0; ii < 16; ii++)
+    while (1)
     {
-        for (size_t i = 0; i < 33; i++)
+        gametimer = std::chrono::high_resolution_clock::now();
+
+        //reset the scene array
+        static COORD cursorcoord = { (SHORT)0, (SHORT)0 };
+        for (size_t ii = 0; ii < 16; ii++)
         {
-            scene[ii][i] = (int)0;
+            for (size_t i = 0; i < 33; i++)
+            {
+                scene[ii][i] = (int)0;
+            }
         }
-    }
 
-    //game input - w = 1 = up, a = 2 = left, s = 3 = down, d = 4 = right
-    int lastmove = 0;
+        //game input - w = 1 = up, a = 2 = left, s = 3 = down, d = 4 = right
+        int lastmove = 0;
 
-    if (GetAsyncKeyState(87) && lastmovekey != 3) lastmovekey = 1;
-    else if (GetAsyncKeyState(65) && lastmovekey != 4) lastmovekey = 2;
-    else if (GetAsyncKeyState(83) && lastmovekey != 1) lastmovekey = 3;
-    else if (GetAsyncKeyState(68) && lastmovekey != 2) lastmovekey = 4;
-   
-    //alow lastmove to change in the update snake loop but always set it back to lastmovekey when loop reran
-    lastmove = lastmovekey;
-    
-    //update snakes body
-    int count = 0;
-    for (auto* i : squares){ count++;}
-    int i;
-    for (i = 0; i < count; i++)
-    {
-        switch(lastmove)
+        if (GetAsyncKeyState(87) && lastmovekey != 3) lastmovekey = 1;
+        else if (GetAsyncKeyState(65) && lastmovekey != 4) lastmovekey = 2;
+        else if (GetAsyncKeyState(83) && lastmovekey != 1) lastmovekey = 3;
+        else if (GetAsyncKeyState(68) && lastmovekey != 2) lastmovekey = 4;
+
+        //alow lastmove to change in the update snake loop but always set it back to lastmovekey when loop reran
+        lastmove = lastmovekey;
+
+        //update snakes body
+        int count = 0;
+        for (auto* i : squares) { count++; }
+        int i;
+        for (i = 0; i < count; i++)
         {
+            switch (lastmove)
+            {
             case 1://up
                 if (&squares[i] == &squares[0])
                 {
@@ -172,12 +175,12 @@ void gameloop() {
                     lastmove = 4;
                     break;
                 }
-           
+
                 break;
             case 2://left ->
                 if (&squares[i] == &squares[0])
                 {
-                    
+
                     squares[0]->x -= 1;
                     break;
                 }
@@ -199,12 +202,12 @@ void gameloop() {
                     lastmove = 3;
                     break;
                 }
-                
+
                 break;
             case 3://down
                 if (&squares[i] == &squares[0])
                 {
-                    
+
                     squares[0]->y += 1;
                     break;
                 }
@@ -226,12 +229,12 @@ void gameloop() {
                     lastmove = 4;
                     break;
                 }
-                
+
                 break;
             case 4://right
                 if (&squares[i] == &squares[0])
                 {
-                    
+
                     squares[0]->x += 1;
                     break;
                 }
@@ -253,85 +256,84 @@ void gameloop() {
                     lastmove = 3;
                     break;
                 }
-                
+
                 break;
 
+            }
         }
-    }
 
-    //if eat food
-    if (squares[0]->x == foods[0]->x && squares[0]->y == foods[0]->y)
-    {
-        score++;//game input - w = 1 = up, a = 2 = left, s = 3 = down, d = 4 = right
-        //determine where to initaly place new snake body
-        objects* firstsquare = new objects;
-        switch (lastmove)
+        //if eat food
+        if (squares[0]->x == foods[0]->x && squares[0]->y == foods[0]->y)
         {
+            score++;//game input - w = 1 = up, a = 2 = left, s = 3 = down, d = 4 = right
+            //determine where to initaly place new snake body
+            objects* firstsquare = new objects;
+            switch (lastmove)
+            {
             case 1:
-                firstsquare->x = squares[i-1]->x;
-                firstsquare->y = squares[i-1]->y + 1;
+                firstsquare->x = squares[i - 1]->x;
+                firstsquare->y = squares[i - 1]->y + 1;
                 break;
 
             case 2:
-                firstsquare->x = squares[i-1]->x +1;
-                firstsquare->y = squares[i-1]->y;
+                firstsquare->x = squares[i - 1]->x + 1;
+                firstsquare->y = squares[i - 1]->y;
                 break;
 
             case 3:
-                firstsquare->x = squares[i-1]->x;
-                firstsquare->y = squares[i-1]->y - 1;
+                firstsquare->x = squares[i - 1]->x;
+                firstsquare->y = squares[i - 1]->y - 1;
                 break;
 
             case 4:
-                firstsquare->x = squares[i-1]->x -1;
-                firstsquare->y = squares[i-1]->y;
+                firstsquare->x = squares[i - 1]->x - 1;
+                firstsquare->y = squares[i - 1]->y;
                 break;
+            }
+            squares.push_back(firstsquare);
+
+            //generate new food
+            foods[0]->x = (rand() % 32);
+            foods[0]->y = (rand() % 15);
+
+
         }
-        squares.push_back(firstsquare);
 
-        //generate new food
-        foods[0]->x = (rand() % 32);
-        foods[0]->y = (rand() % 15);
+        //snake die
+        if (squares[0]->x > 32 || squares[0]->y <= -1 || squares[0]->x <= -1 || squares[0]->y > 15)
+        {
+            startgame();
+        }
 
 
-    }
-
-    //snake die
-    if (squares[0]->x > 32 || squares[0]->y <= -1 || squares[0]->x <= -1 || squares[0]->y > 15) 
-    {
-        startgame();
-    }
-    
-
-    //add objects to scene array
-    for (auto* i : squares)
-    {
-        //set snake
-        if(i == squares[0])
+        //add objects to scene array
+        for (auto* i : squares)
+        {
+            //set snake
+            if (i == squares[0])
+                scene[i->y][i->x] = (int)2;
+            else
+                scene[i->y][i->x] = (int)1;
+        }
+        for (auto* i : foods)
+        {
+            //set food
             scene[i->y][i->x] = (int)2;
-        else
-            scene[i->y][i->x] = (int)1;
+        }
+
+        render();
+
+
+        int difference = ((int)std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - gametimer).count());
+        char a[20];
+        sprintf(a, "%d", difference);
+        std::string ae = (std::string)a + "\n";
+        LPTSTR lstring = new TCHAR[ae.size() + 1];
+        strcpy(lstring, ae.c_str());
+        OutputDebugString(lstring);
+
+        while ((int)std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - gametimer).count() <= 166000000) {}
     }
-    for (auto* i : foods)
-    {
-        //set food
-        scene[i->y][i->x] = (int)2;
-    }
-    
-    render();
-
-
-    int difference = ((int)std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - gametimer).count());
-    char a[20];
-    sprintf(a, "%d", difference);
-    std::string ae =  (std::string)a + "\n";
-    LPTSTR lstring = new TCHAR[ae.size() + 1];
-    strcpy(lstring, ae.c_str());
-    OutputDebugString(lstring);
-
-    while ((int)std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - gametimer).count() <= 166000000) {}
-
-    gameloop();
 }
 
 void render() 
@@ -384,7 +386,7 @@ void render()
 
 void resetgame() {
     //delete all objects in the 2 arrays and clear the arrays
-
+    previousscore = score;
     static COORD cursorcoord = { (SHORT)0, (SHORT)0 };
     //fill screen and arrays with walls
     for (size_t ii = 0; ii < 16; ii++)
@@ -424,8 +426,8 @@ void resetgame() {
 void initaliseobjects()
 {
     objects* firstsquare = new objects;
-    firstsquare->x = 0;
-    firstsquare->y = 0;
+    firstsquare->x = 16;
+    firstsquare->y = 8;
     squares.push_back(firstsquare);
 
     objects* firstfood = new objects;
